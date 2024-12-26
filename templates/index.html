@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS Feed Reader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .main-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .feed-form {
+            margin-bottom: 20px;
+        }
+        
+        .feed-form input[type="url"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .feed-form button {
+            width: 100%;
+            padding: 8px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .feed-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feed-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .feed-list a {
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .entry {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .entry h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+        
+        .entry-meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .remove-feed {
+            color: #dc3545;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .flash-message.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .no-entries {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .entry-content img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <form class="feed-form" method="POST" action="{{ url_for('add_feed') }}">
+                <input type="url" name="url" placeholder="Enter RSS feed URL" required>
+                <button type="submit">Add Feed</button>
+            </form>
+            
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <h3>Your Feeds ({{ feeds|length }})</h3>
+            <ul class="feed-list">
+                {% if feeds %}
+                    {% for feed in feeds %}
+                    <li>
+                        <span>{{ feed.title or feed.url }}</span>
+                        <a href="{{ url_for('remove_feed', feed_id=feed.id) }}" class="remove-feed">Remove</a>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li>No feeds added yet</li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <div class="main-content">
+            <h1>Recent Articles ({{ entries|length }})</h1>
+            {% if entries %}
+                {% for entry in entries %}
+                <article class="entry">
+                    <h2><a href="{{ entry.link }}" target="_blank">{{ entry.title }}</a></h2>
+                    <div class="entry-meta">
+                        From {{ entry.feed_title }} • 
+                        {% if entry.published %}
+                            {{ entry.published.strftime('%Y-%m-%d %H:%M') }}
+                        {% endif %}
+                    </div>
+                    <div class="entry-content">
+                        {{ entry.description|safe if entry.description else 'No description available' }}
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <div class="no-entries">
+                    <p>No entries found. Add some RSS feeds to get started!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
