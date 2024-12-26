@@ -5,8 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSS Feed Reader</title>
     <style>
+                .filter-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .filter-section h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-option input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .apply-filters {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .clear-filters {
+            margin-top: 5px;
+            padding: 8px 16px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: Tahoma, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -130,11 +178,19 @@
 <body>
     <div class="container">
         <div class="sidebar">
+            <!-- Add Feed Form -->
             <form class="feed-form" method="POST" action="{{ url_for('add_feed') }}">
                 <input type="url" name="url" placeholder="Enter RSS feed URL" required>
+                <select name="category" required>
+                    <option value="">Select Category</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
                 <button type="submit">Add Feed</button>
             </form>
             
+            <!-- Flash Messages -->
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
                     <div class="flash-messages">
@@ -145,12 +201,49 @@
                 {% endif %}
             {% endwith %}
             
+            <!-- Filters Form -->
+            <form action="{{ url_for('index') }}" method="GET">
+                <!-- Feed Filter Section -->
+                <div class="filter-section">
+                    <h4>Filter by Feed</h4>
+                    <div class="filter-options">
+                        {% for feed in feeds %}
+                        <label class="filter-option">
+                            <input type="checkbox" name="feeds" value="{{ feed.id }}"
+                                   {% if selected_feeds and feed.id|string in selected_feeds %}checked{% endif %}>
+                            {{ feed.title or feed.url }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Category Filter Section -->
+                <div class="filter-section">
+                    <h4>Filter by Category</h4>
+                    <div class="filter-options">
+                        {% for category in categories %}
+                        <label class="filter-option">
+                            <input type="checkbox" name="categories" value="{{ category }}"
+                                   {% if selected_categories and category in selected_categories %}checked{% endif %}>
+                            {{ category }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Filter Buttons -->
+                <button type="submit" class="apply-filters">Apply Filters</button>
+                <a href="{{ url_for('index') }}" class="clear-filters">Clear Filters</a>
+            </form>
+            
+            <!-- Feed List -->
             <h3>Your Feeds ({{ feeds|length }})</h3>
             <ul class="feed-list">
                 {% if feeds %}
                     {% for feed in feeds %}
                     <li>
                         <span>{{ feed.title or feed.url }}</span>
+                        <span>({{ feed.category }})</span>
                         <a href="{{ url_for('remove_feed', feed_id=feed.id) }}" class="remove-feed">Remove</a>
                     </li>
                     {% endfor %}
@@ -160,6 +253,7 @@
             </ul>
         </div>
         
+        <!-- Main Content -->
         <div class="main-content">
             <h1>Recent Articles ({{ entries|length }})</h1>
             {% if entries %}
